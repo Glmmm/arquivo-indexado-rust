@@ -1,4 +1,4 @@
-use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}, utils::faturamento::{ faturamento}};
+use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}, utils::faturamentos::{ faturamento}};
 mod structs;
 mod menus;
 mod db;

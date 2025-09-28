@@ -589,7 +589,7 @@ pub fn menu_diarias(manager: &mut FileManager<Diaria>) {
     }
 }
 
-pub fn atualizar_diaria(diaria_manager: &mut FileManager<Diaria>, codigo_dia: u32, codigo_especialidade: u32, incremento: i32) {
+fn atualizar_diaria(diaria_manager: &mut FileManager<Diaria>, codigo_dia: u32, codigo_especialidade: u32, incremento: i32) {
     if let Ok(Some(mut diaria)) = diaria_manager.read_record(codigo_dia) {
         diaria.quantidade_consultas = (diaria.quantidade_consultas as i32 + incremento) as u32;
         if let Err(e) = diaria_manager.create_record(&diaria, codigo_dia) {

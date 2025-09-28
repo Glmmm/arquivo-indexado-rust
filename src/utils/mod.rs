@@ -1,1 +1,2 @@
-pub mod faturamento;
+pub mod faturamentos;
+pub mod relatorios;
