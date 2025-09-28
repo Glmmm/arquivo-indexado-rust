@@ -6,6 +6,6 @@ pub struct Consulta {
     pub codigo_paciente: u32,
     pub codigo_medico: u32,
     pub codigo_exame: u32,
-    pub data: String, // Considere usar `chrono::NaiveDate`
-    pub hora: String, // Considere usar `chrono::NaiveTime`
+    pub data: String, 
+    pub hora: String,
 }
