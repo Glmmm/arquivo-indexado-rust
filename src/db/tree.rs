@@ -30,76 +30,86 @@ impl BinaryTree {
     }
 
     pub fn insert(&mut self, key: u32, offset: u64) {
-        let new_node = Box::new(Node::new(key, offset));
-        self.root = self.insert_recursive(self.root.take(), new_node);
+        Self::insert_recursive(&mut self.root, key, offset);
     }
-
-    fn insert_recursive(&self, node: Option<Box<Node>>, new_node: Box<Node>) -> Option<Box<Node>> {
-        match node {
-            None => Some(new_node),
-            Some(mut current_node) => {
-                if new_node.key < current_node.key {
-                    current_node.left = self.insert_recursive(current_node.left.take(), new_node);
-                } else if new_node.key > current_node.key {
-                    current_node.right = self.insert_recursive(current_node.right.take(), new_node);
+    
+    fn insert_recursive(node_opt: &mut Option<Box<Node>>, key: u32, offset: u64) {
+        match node_opt {
+            Some(node) => {
+                if key < node.key {
+                    Self::insert_recursive(&mut node.left, key, offset);
+                } else if key > node.key {
+                    Self::insert_recursive(&mut node.right, key, offset);
                 }
-                Some(current_node)
+            }
+            None => {
+                *node_opt = Some(Box::new(Node::new(key, offset)));
             }
         }
     }
 
     pub fn search(&self, key: u32) -> Option<u64> {
-        self.search_recursive(&self.root, key)
+        Self::search_recursive(&self.root, key)
     }
 
-    fn search_recursive(&self, node: &Option<Box<Node>>, key: u32) -> Option<u64> {
-        match node {
-            None => None,
-            Some(current_node) => {
-                if key == current_node.key {
-                    Some(current_node.offset)
-                } else if key < current_node.key {
-                    self.search_recursive(&current_node.left, key)
+    fn search_recursive(node_opt: &Option<Box<Node>>, key: u32) -> Option<u64> {
+        match node_opt {
+            Some(node) => {
+                if key == node.key {
+                    Some(node.offset)
+                } else if key < node.key {
+                    Self::search_recursive(&node.left, key)
                 } else {
-                    self.search_recursive(&current_node.right, key)
+                    Self::search_recursive(&node.right, key)
                 }
             }
+            None => None,
         }
     }
 
     pub fn delete(&mut self, key: u32) -> bool {
-        let was_deleted = self.delete_recursive(&mut self.root, key);
-        was_deleted.is_some()
+        delete_recursive(&mut self.root, key).is_some()
     }
+}
 
-    fn delete_recursive(&mut self, node: &mut Option<Box<Node>>, key: u32) -> Option<Box<Node>> {
-        if let Some(mut current_node) = node.take() {
-            if key < current_node.key {
-                current_node.left = self.delete_recursive(&mut current_node.left, key);
-            } else if key > current_node.key {
-                current_node.right = self.delete_recursive(&mut current_node.right, key);
-            } else {
-                if current_node.left.is_none() {
-                    return current_node.right.take();
-                } else if current_node.right.is_none() {
-                    return current_node.left.take();
-                }
-
-                let successor = self.find_min_recursive(current_node.right.as_mut().unwrap());
-                current_node.key = successor.key;
-                current_node.offset = successor.offset;
-                current_node.right = self.delete_recursive(&mut current_node.right, successor.key);
-            }
-            return Some(current_node);
-        }
-        None
-    }
-
-    fn find_min_recursive<'a>(&'a self, node: &'a mut Node) -> &'a mut Node {
-        if node.left.is_none() {
-            node
+fn delete_recursive(node: &mut Option<Box<Node>>, key: u32) -> Option<Box<Node>> {
+    if let Some(mut current_node) = node.take() {
+        if key < current_node.key {
+            current_node.left = delete_recursive(&mut current_node.left, key);
+        } else if key > current_node.key {
+            current_node.right = delete_recursive(&mut current_node.right, key);
         } else {
-            self.find_min_recursive(node.left.as_mut().unwrap())
+            if current_node.left.is_none() {
+                return current_node.right.take();
+            } else if current_node.right.is_none() {
+                return current_node.left.take();
+            }
+
+            let successor = find_min_and_remove(&mut current_node.right);
+            if let Some(s) = successor {
+                current_node.key = s.key;
+                current_node.offset = s.offset;
+            }
         }
+        return Some(current_node);
     }
+    None
+}
+
+fn find_min_and_remove(node_opt: &mut Option<Box<Node>>) -> Option<Box<Node>> {
+    let mut current = node_opt.as_mut().unwrap();
+    
+    if current.left.is_none() {
+        return node_opt.take();
+    }
+    
+    while current.left.as_ref().unwrap().left.is_some() {
+        current = current.left.as_mut().unwrap();
+    }
+    
+    let mut successor = current.left.take().unwrap();
+    
+    current.left = successor.right.take();
+    
+    Some(successor)
 }
