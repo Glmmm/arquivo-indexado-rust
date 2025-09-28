@@ -21,7 +21,7 @@ impl Node {
 }
 
 pub struct BinaryTree {
-    root: Option<Box<Node>>,
+    pub root: Option<Box<Node>>,
 }
 
 impl BinaryTree {
@@ -31,8 +31,7 @@ impl BinaryTree {
 
     pub fn insert(&mut self, key: u32, offset: u64) {
         let new_node = Box::new(Node::new(key, offset));
-        let root = self.root.take();
-        self.root = self.insert_recursive(root, new_node);
+        self.root = self.insert_recursive(self.root.take(), new_node);
     }
 
     fn insert_recursive(&self, node: Option<Box<Node>>, new_node: Box<Node>) -> Option<Box<Node>> {

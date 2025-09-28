@@ -5,4 +5,3 @@ pub mod medico;
 pub mod exame;
 pub mod consulta;
 pub mod diaria;
-pub mod tree;

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::{db::entity::FileManager, menus::{ler_opcao_menu, ler_string}, structs::{consulta::Consulta, especialidade::Especialidade, exame::Exame, medico::Medico}};
+use crate::{db::file_manager::FileManager, menus::ler_opcao_menu, structs::{consulta::Consulta, especialidade::Especialidade, exame::Exame, medico::Medico}};
+
 
 pub fn faturamento(
     consulta_manager: &FileManager<Consulta>,

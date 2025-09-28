@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}};
+use crate::{db::file_manager::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}};
 
 pub fn exibir_menu_principal() {
     println!("\n--- Menu Principal ---");
