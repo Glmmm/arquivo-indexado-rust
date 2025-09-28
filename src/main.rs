@@ -1,4 +1,4 @@
-use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}};
+use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::{self, Medico}, paciente::Paciente}};
 
 
  mod structs;
@@ -20,8 +20,8 @@ fn main() {
         let choice = menus::ler_opcao_menu();
 
         match choice {
-            1 => menus::menu_pacientes(&mut paciente_manager),
-            2 => menus::menu_medicos(&mut medico_manager),
+            1 => menus::menu_pacientes(&mut paciente_manager, &mut cidade_manager),
+            2 => menus::menu_medicos(&mut medico_manager,&mut cidade_manager, &mut especialidade_manager),
             3 => menus::menu_especialidades(&mut especialidade_manager),
             4 => menus::menu_cidades(&mut cidade_manager),
             5 => menus::menu_exames(&mut exame_manager),

@@ -50,11 +50,9 @@ pub fn ler_f32(prompt: &str) -> f32 {
     }
 }
 
-// Lógica para cada submenu
-// ---
 
-pub fn menu_pacientes(manager: &mut FileManager<Paciente>) {
-    loop {
+pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &FileManager<Cidade>) {
+   loop {
         println!("\n--- Gerenciamento de Pacientes ---");
         println!("1. Inserir novo paciente");
         println!("2. Consultar paciente por código");
@@ -71,8 +69,8 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>) {
                 let endereco = ler_string("Endereço: ");
                 let telefone = ler_string("Telefone: ");
                 let codigo_cidade = ler_u32("Código da Cidade: ");
-                let peso = ler_f32("Peso: ");
-                let altura = ler_f32("Altura: ");
+                let peso = ler_f32("Peso (kg): ");
+                let altura = ler_f32("Altura (m): ");
 
                 let novo_paciente = Paciente { codigo_paciente: codigo, nome, data_nascimento, endereco, telefone, codigo_cidade, peso, altura };
                 if let Err(e) = manager.create_record(&novo_paciente, codigo) {
@@ -84,7 +82,33 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>) {
             2 => {
                 let codigo = ler_u32("Digite o código do paciente para consulta: ");
                 if let Ok(Some(paciente)) = manager.read_record(codigo) {
-                    println!("Registro encontrado: {:?}", paciente);
+                    println!("\n--- Dados do Paciente ---");
+                    println!("Código: {}", paciente.codigo_paciente);
+                    println!("Nome: {}", paciente.nome);
+                    println!("Data de Nascimento: {}", paciente.data_nascimento);
+                    println!("Endereço: {}", paciente.endereco);
+                    println!("Telefone: {}", paciente.telefone);
+
+                    // Requisito 2: Buscar e exibir a cidade e o estado
+                    if let Ok(Some(cidade)) = cidade_manager.read_record(paciente.codigo_cidade) {
+                        println!("Cidade: {}, Estado: {}", cidade.descricao, cidade.estado);
+                    } else {
+                        println!("Cidade: Não encontrada");
+                    }
+                    
+                    // Requisito 2.1: Calcular e exibir o IMC e o diagnóstico
+                    let imc = paciente.peso / (paciente.altura * paciente.altura);
+                    let diagnostico = match imc {
+                        _ if imc < 18.5 => "Abaixo do peso",
+                        _ if imc < 25.0 => "Peso normal",
+                        _ if imc < 30.0 => "Sobrepeso",
+                        _ => "Obesidade",
+                    };
+                    println!("Peso: {:.2} kg", paciente.peso);
+                    println!("Altura: {:.2} m", paciente.altura);
+                    println!("IMC: {:.2}", imc);
+                    println!("Diagnóstico: {}", diagnostico);
+
                 } else {
                     println!("Paciente não encontrado.");
                 }
@@ -112,8 +136,7 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>) {
         }
     }
 }
-
-pub fn menu_medicos(manager: &mut FileManager<Medico>) {
+pub fn menu_medicos(manager: &mut FileManager<Medico>, cidade_manager: &FileManager<Cidade>, especialidade_manager: &FileManager<Especialidade>) {
     loop {
         println!("\n--- Gerenciamento de Médicos ---");
         println!("1. Inserir novo médico");
@@ -142,7 +165,28 @@ pub fn menu_medicos(manager: &mut FileManager<Medico>) {
             2 => {
                 let codigo = ler_u32("Digite o código do médico para consulta: ");
                 if let Ok(Some(medico)) = manager.read_record(codigo) {
-                    println!("Registro encontrado: {:?}", medico);
+                    println!("\n--- Dados do Médico ---");
+                    println!("Código: {}", medico.codigo_medico);
+                    println!("Nome: {}", medico.nome);
+                    println!("Endereço: {}", medico.endereco);
+                    println!("Telefone: {}", medico.telefone);
+
+                    // Requisito 3: Buscar e exibir a cidade e o estado
+                    if let Ok(Some(cidade)) = cidade_manager.read_record(medico.codigo_cidade) {
+                        println!("Cidade: {}, Estado: {}", cidade.descricao, cidade.estado);
+                    } else {
+                        println!("Cidade: Não encontrada");
+                    }
+                    
+                    // Requisito 3.1: Buscar e exibir os dados da especialidade
+                    if let Ok(Some(especialidade)) = especialidade_manager.read_record(medico.codigo_especialidade) {
+                        println!("Especialidade: {}", especialidade.descricao);
+                        println!("Valor da Consulta: R$ {:.2}", especialidade.valor_consulta);
+                        println!("Limite Diário de Consultas: {}", especialidade.limite_diario);
+                    } else {
+                        println!("Especialidade: Não encontrada");
+                    }
+
                 } else {
                     println!("Médico não encontrado.");
                 }
