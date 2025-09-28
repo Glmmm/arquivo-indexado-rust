@@ -1,4 +1,4 @@
-use crate::{db::file_manager::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}, utils::faturamentos::{ faturamento}};
+use crate::{db::file_manager::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}, utils::{faturamentos, relatorios}};
 mod structs;
 mod menus;
 mod db;
@@ -14,7 +14,7 @@ fn main() {
     let mut diaria_manager = FileManager::<Diaria>::new("diarias.dat").unwrap();
 
     loop {
-        menus::exibir_menu_principal();
+        menus::exibir_menu_principal(); 
         let choice = menus::ler_opcao_menu();
 
         match choice {
@@ -23,11 +23,31 @@ fn main() {
             3 => menus::menu_especialidades(&mut especialidade_manager),
             4 => menus::menu_cidades(&mut cidade_manager),
             5 => menus::menu_exames(&mut exame_manager, &especialidade_manager),
-            6 => menus::menu_consultas(&mut consulta_manager, &paciente_manager, &medico_manager, &cidade_manager, &especialidade_manager, &exame_manager, &mut diaria_manager),
+            6 => menus::menu_consultas(
+                &mut consulta_manager,
+                &paciente_manager,
+                &medico_manager,
+                &especialidade_manager,
+                &exame_manager,
+                &mut diaria_manager,
+            ),
             7 => menus::menu_diarias(&mut diaria_manager),
-            8 => faturamento(&consulta_manager, &medico_manager, &especialidade_manager, &exame_manager),
-            9 => {
-                println!("Saindo do sistema. Até mais!");
+            8 => faturamentos::menu_faturamento(
+                &consulta_manager,
+                &medico_manager,
+                &especialidade_manager,
+                &exame_manager,
+            ),
+            9 => relatorios::relatorio_consultas_ordenadas(
+                &consulta_manager,
+                &paciente_manager,
+                &cidade_manager,
+                &medico_manager,
+                &especialidade_manager,
+                &exame_manager,
+            ),
+            10 => {
+                println!("Até mais!");
                 break;
             },
             _ => println!("Opção inválida. Por favor, tente novamente."),

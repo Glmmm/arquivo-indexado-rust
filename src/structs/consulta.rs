@@ -35,13 +35,13 @@ impl Entity for Consulta {
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, io::Error> {
         let mut cursor = 0;
-        let mut read_u32 = |c: &mut usize| -> u32 {
+        let read_u32 = |c: &mut usize| -> u32 {
             let val = u32::from_le_bytes([bytes[*c], bytes[*c + 1], bytes[*c + 2], bytes[*c + 3]]);
             *c += size_of::<u32>();
             val
         };
 
-        let mut read_string = |c: &mut usize| -> Result<String, io::Error> {
+        let read_string = |c: &mut usize| -> Result<String, io::Error> {
             let len = read_u32(c) as usize;
             let start = *c;
             let end = start + len;

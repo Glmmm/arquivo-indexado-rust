@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{db::file_manager::FileManager, menus::{ler_opcao_menu, ler_string}, structs::{consulta::Consulta, especialidade::Especialidade, exame::Exame, medico::Medico}};
+use crate::{db::file_manager::FileManager, menus::{ler_opcao_menu, ler_string}, structs::{ consulta::Consulta, especialidade::Especialidade, exame::Exame, medico::Medico}};
 
 
-pub fn faturamento(
+pub fn menu_faturamento(
     consulta_manager: &FileManager<Consulta>,
     medico_manager: &FileManager<Medico>,
     especialidade_manager: &FileManager<Especialidade>,
@@ -15,9 +15,9 @@ pub fn faturamento(
         println!("2. Faturamento por Período");
         println!("3. Faturamento por Médico");
         println!("4. Faturamento por Especialidade");
-        println!("5. Voltar ao menu principal");
-
+        println!("5. Voltar");
         let choice = ler_opcao_menu();
+
         match choice {
             1 => faturamento_por_dia(consulta_manager, medico_manager, especialidade_manager, exame_manager),
             2 => faturamento_por_periodo(consulta_manager, medico_manager, especialidade_manager, exame_manager),
@@ -29,130 +29,117 @@ pub fn faturamento(
     }
 }
 
-fn faturamento_por_dia(
+pub fn faturamento_por_dia(
     consulta_manager: &FileManager<Consulta>,
     medico_manager: &FileManager<Medico>,
     especialidade_manager: &FileManager<Especialidade>,
     exame_manager: &FileManager<Exame>,
 ) {
-    let mut faturamento_dia: HashMap<String, f32> = HashMap::new();
+    let dia = ler_string("Digite o dia (AAAAMMDD): ");
     let consultas = consulta_manager.read_all_records().unwrap();
-
-    for consulta in consultas {
-        let valor_total = calcular_valor_consulta_total(
-            &consulta,
-            medico_manager,
-            especialidade_manager,
-            exame_manager,
-        );
-        *faturamento_dia.entry(consulta.data).or_insert(0.0) += valor_total;
+    let consultas_do_dia = consultas.into_iter().filter(|c| c.data == dia).collect::<Vec<_>>();
+    
+    let mut faturamento_total = 0.0;
+    println!("\nFaturamento do dia {}:", dia);
+    for consulta in consultas_do_dia {
+        let valor = calcular_valor_consulta_total(&consulta, medico_manager, especialidade_manager, exame_manager);
+        println!("- Consulta {}: R$ {:.2}", consulta.codigo_consulta, valor);
+        faturamento_total += valor;
     }
-
-    println!("\n--- Faturamento por Dia ---");
-    for (dia, valor) in faturamento_dia {
-        println!("Dia {}: R$ {:.2}", dia, valor);
-    }
+    println!("Faturamento total do dia: R$ {:.2}", faturamento_total);
 }
 
-fn faturamento_por_periodo(
+pub fn faturamento_por_periodo(
     consulta_manager: &FileManager<Consulta>,
     medico_manager: &FileManager<Medico>,
     especialidade_manager: &FileManager<Especialidade>,
     exame_manager: &FileManager<Exame>,
 ) {
-    let data_inicial = ler_string("Digite a data inicial (AAAAMMDD): ");
-    let data_final = ler_string("Digite a data final (AAAAMMDD): ");
-    let mut valor_total_periodo = 0.0;
-    let consultas = consulta_manager.read_all_records().unwrap();
+    let inicio_str = ler_string("Digite a data de início (AAAAMMDD): ");
+    let fim_str = ler_string("Digite a data de fim (AAAAMMDD): ");
+    
+    let inicio = inicio_str.parse::<u32>().unwrap_or(0);
+    let fim = fim_str.parse::<u32>().unwrap_or(0);
 
+    let consultas = consulta_manager.read_all_records().unwrap();
+    let consultas_do_periodo = consultas.into_iter()
+        .filter(|c| {
+            let data_consulta = c.data.parse::<u32>().unwrap_or(0);
+            data_consulta >= inicio && data_consulta <= fim
+        })
+        .collect::<Vec<_>>();
+
+    let mut faturamento_total = 0.0;
+    println!("\nFaturamento do período de {} a {}:", inicio_str, fim_str);
+    for consulta in consultas_do_periodo {
+        let valor = calcular_valor_consulta_total(&consulta, medico_manager, especialidade_manager, exame_manager);
+        println!("- Consulta {}: R$ {:.2}", consulta.codigo_consulta, valor);
+        faturamento_total += valor;
+    }
+    println!("Faturamento total do período: R$ {:.2}", faturamento_total);
+}
+
+pub fn faturamento_por_medico(
+    consulta_manager: &FileManager<Consulta>,
+    medico_manager: &FileManager<Medico>,
+    especialidade_manager: &FileManager<Especialidade>,
+    exame_manager: &FileManager<Exame>,
+) {
+    let mut faturamento_por_medico = HashMap::new();
+    let consultas = consulta_manager.read_all_records().unwrap();
+    let medicos = medico_manager.read_all_records().unwrap();
+    
     for consulta in consultas {
-        if consulta.data >= data_inicial && consulta.data <= data_final {
-            valor_total_periodo += calcular_valor_consulta_total(
-                &consulta,
-                medico_manager,
-                especialidade_manager,
-                exame_manager,
-            );
+        let valor = calcular_valor_consulta_total(&consulta, medico_manager, especialidade_manager, exame_manager);
+        let medico = medicos.iter().find(|m| m.codigo_medico == consulta.codigo_medico);
+        if let Some(medico) = medico {
+            *faturamento_por_medico.entry(&medico.nome).or_insert(0.0) += valor;
         }
     }
-
-    println!("\n--- Faturamento de {} a {} ---", data_inicial, data_final);
-    println!("Faturamento total no período: R$ {:.2}", valor_total_periodo);
-}
-
-fn faturamento_por_medico(
-    consulta_manager: &FileManager<Consulta>,
-    medico_manager: &FileManager<Medico>,
-    especialidade_manager: &FileManager<Especialidade>,
-    exame_manager: &FileManager<Exame>,
-) {
-    let mut faturamento_medico: HashMap<u32, f32> = HashMap::new();
-    let consultas = consulta_manager.read_all_records().unwrap();
-
-    for consulta in consultas {
-        let valor_total = calcular_valor_consulta_total(
-            &consulta,
-            medico_manager,
-            especialidade_manager,
-            exame_manager,
-        );
-        *faturamento_medico.entry(consulta.codigo_medico).or_insert(0.0) += valor_total;
-    }
-
+    
     println!("\n--- Faturamento por Médico ---");
-    for (codigo_medico, valor) in faturamento_medico {
-        let medico = medico_manager.read_record(codigo_medico).unwrap_or(None);
-        let nome_medico = medico.map_or("Médico Desconhecido".to_string(), |m| m.nome);
-        println!("{}: R$ {:.2}", nome_medico, valor);
+    for (nome_medico, faturamento) in faturamento_por_medico {
+        println!("{}: R$ {:.2}", nome_medico, faturamento);
     }
 }
 
-fn faturamento_por_especialidade(
+pub fn faturamento_por_especialidade(
     consulta_manager: &FileManager<Consulta>,
     medico_manager: &FileManager<Medico>,
     especialidade_manager: &FileManager<Especialidade>,
     exame_manager: &FileManager<Exame>,
 ) {
-    let mut faturamento_especialidade: HashMap<u32, f32> = HashMap::new();
+    let mut faturamento_por_especialidade = HashMap::new();
     let consultas = consulta_manager.read_all_records().unwrap();
+    let medicos = medico_manager.read_all_records().unwrap();
+    let especialidades = especialidade_manager.read_all_records().unwrap();
 
     for consulta in consultas {
-        let valor_total = calcular_valor_consulta_total(
-            &consulta,
-            medico_manager,
-            especialidade_manager,
-            exame_manager,
-        );
-        
-        if let Ok(Some(medico)) = medico_manager.read_record(consulta.codigo_medico) {
-            *faturamento_especialidade.entry(medico.codigo_especialidade).or_insert(0.0) += valor_total;
+        let valor = calcular_valor_consulta_total(&consulta, medico_manager, especialidade_manager, exame_manager);
+        let medico = medicos.iter().find(|m| m.codigo_medico == consulta.codigo_medico);
+        if let Some(medico) = medico {
+            let especialidade = especialidades.iter().find(|e| e.codigo_especialidade == medico.codigo_especialidade);
+            if let Some(especialidade) = especialidade {
+                *faturamento_por_especialidade.entry(&especialidade.descricao).or_insert(0.0) += valor;
+            }
         }
     }
 
     println!("\n--- Faturamento por Especialidade ---");
-    for (codigo_especialidade, valor) in faturamento_especialidade {
-        let especialidade = especialidade_manager.read_record(codigo_especialidade).unwrap_or(None);
-        let descricao = especialidade.map_or("Especialidade Desconhecida".to_string(), |e| e.descricao);
-        println!("{}: R$ {:.2}", descricao, valor);
+    for (descricao, faturamento) in faturamento_por_especialidade {
+        println!("{}: R$ {:.2}", descricao, faturamento);
     }
 }
 
-fn calcular_valor_consulta_total(
+pub fn calcular_valor_consulta_total(
     consulta: &Consulta,
     medico_manager: &FileManager<Medico>,
     especialidade_manager: &FileManager<Especialidade>,
     exame_manager: &FileManager<Exame>,
 ) -> f32 {
-    let valor_consulta = medico_manager
-        .read_record(consulta.codigo_medico)
-        .ok().flatten()
-        .and_then(|m| especialidade_manager.read_record(m.codigo_especialidade).ok().flatten())
-        .map_or(0.0, |e| e.valor_consulta);
-
-    let valor_exame = exame_manager
-        .read_record(consulta.codigo_exame)
-        .ok().flatten()
-        .map_or(0.0, |e| e.valor_exame);
-
-    valor_consulta + valor_exame
+    let medico = medico_manager.read_record(consulta.codigo_medico).unwrap().unwrap();
+    let especialidade = especialidade_manager.read_record(medico.codigo_especialidade).unwrap().unwrap();
+    let exame = exame_manager.read_record(consulta.codigo_exame).unwrap().unwrap();
+    
+    especialidade.valor_consulta + exame.valor_exame
 }

@@ -2,7 +2,8 @@ use std::collections::HashSet;
 
 use crate::{db::file_manager::FileManager, structs::{cidade::Cidade, consulta::Consulta, especialidade::Especialidade, exame::Exame, medico::Medico, paciente::Paciente}};
 
-fn relatorio_consultas_ordenadas(
+
+pub fn relatorio_consultas_ordenadas(
     consulta_manager: &FileManager<Consulta>,
     paciente_manager: &FileManager<Paciente>,
     cidade_manager: &FileManager<Cidade>,
