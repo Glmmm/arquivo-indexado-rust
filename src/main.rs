@@ -1,4 +1,4 @@
-use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::{self, Medico}, paciente::Paciente}};
+use crate::{db::entity::FileManager, structs::{cidade::Cidade, consulta::Consulta, diaria::Diaria, especialidade::Especialidade, exame::Exame, medico::{ Medico}, paciente::Paciente}};
 
 
  mod structs;
@@ -24,8 +24,8 @@ fn main() {
             2 => menus::menu_medicos(&mut medico_manager,&mut cidade_manager, &mut especialidade_manager),
             3 => menus::menu_especialidades(&mut especialidade_manager),
             4 => menus::menu_cidades(&mut cidade_manager),
-            5 => menus::menu_exames(&mut exame_manager),
-            6 => menus::menu_consultas(&mut consulta_manager),
+            5 => menus::menu_exames(&mut exame_manager,&mut especialidade_manager),
+            6 => menus::menu_consultas(&mut consulta_manager, &mut paciente_manager, &mut medico_manager, &mut cidade_manager, &mut especialidade_manager, &mut exame_manager, &mut diaria_manager),
             7 => menus::menu_diarias(&mut diaria_manager),
             8 => {
                 println!("Saindo do sistema. Até mais!");
