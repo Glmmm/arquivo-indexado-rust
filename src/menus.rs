@@ -58,7 +58,7 @@ pub fn exibir_menu_principal() {
     println!("10. Sair");
 }
 
-fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &FileManager<Cidade>) {
+pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &FileManager<Cidade>) {
     loop {
         println!("\n--- Gerenciamento de Pacientes ---");
         println!("1. Inserir novo paciente");
@@ -145,14 +145,14 @@ fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &FileMana
 }
 pub fn menu_medicos(manager: &mut FileManager<Medico>, cidade_manager: &FileManager<Cidade>, especialidade_manager: &FileManager<Especialidade>) {
     loop {
-        println!("\n--- Gerenciar Médicos ---");
-        println!("1. Incluir Médico");
-        println!("2. Consultar Médico por código");
-        println!("3. Excluir Médico");
-        println!("4. Exibir todos os Médicos");
-        println!("5. Voltar");
-        let choice = ler_opcao_menu();
+        println!("\n--- Gerenciamento de Médicos ---");
+        println!("1. Inserir novo médico");
+        println!("2. Consultar médico por código");
+        println!("3. Excluir médico por código");
+        println!("4. Listar todos os médicos");
+        println!("5. Voltar ao menu principal");
 
+        let choice = ler_opcao_menu();
         match choice {
             1 => {
                 let codigo = ler_u32("Código do Médico: ");
@@ -160,58 +160,67 @@ pub fn menu_medicos(manager: &mut FileManager<Medico>, cidade_manager: &FileMana
                 let endereco = ler_string("Endereço: ");
                 let telefone = ler_string("Telefone: ");
                 let codigo_cidade = ler_u32("Código da Cidade: ");
-                if cidade_manager.read_record(codigo_cidade).unwrap_or(None).is_none() {
-                    println!("Erro: Cidade com código {} não encontrada.", codigo_cidade);
-                    continue;
-                }
                 let codigo_especialidade = ler_u32("Código da Especialidade: ");
-                if especialidade_manager.read_record(codigo_especialidade).unwrap_or(None).is_none() {
-                    println!("Erro: Especialidade com código {} não encontrada.", codigo_especialidade);
-                    continue;
-                }
-                let medico = Medico {
-                    codigo_medico: codigo,
-                    nome,
-                    endereco,
-                    telefone,
-                    codigo_cidade,
-                    codigo_especialidade,
-                };
-                if let Err(e) = manager.create_record(&medico, codigo) {
-                    println!("Erro ao incluir Médico: {}", e);
+
+                let novo_medico = Medico { codigo_medico: codigo, nome, endereco, telefone, codigo_cidade, codigo_especialidade };
+                if let Err(e) = manager.create_record(&novo_medico, codigo) {
+                    eprintln!("Erro ao inserir médico: {}", e);
                 } else {
-                    println!("Médico incluído com sucesso!");
+                    println!("Médico inserido com sucesso!");
                 }
-            }
+            },
             2 => {
-                let codigo = ler_u32("Digite o código do Médico: ");
+                let codigo = ler_u32("Digite o código do médico para consulta: ");
                 if let Ok(Some(medico)) = manager.read_record(codigo) {
-                    println!("{:?}", medico);
+                    println!("\n--- Dados do Médico ---");
+                    println!("Código: {}", medico.codigo_medico);
+                    println!("Nome: {}", medico.nome);
+                    println!("Endereço: {}", medico.endereco);
+                    println!("Telefone: {}", medico.telefone);
+
+                    // Requisito 3: Buscar e exibir a cidade e o estado
+                    if let Ok(Some(cidade)) = cidade_manager.read_record(medico.codigo_cidade) {
+                        println!("Cidade: {}, Estado: {}", cidade.descricao, cidade.estado);
+                    } else {
+                        println!("Cidade: Não encontrada");
+                    }
+                    
+                    // Requisito 3.1: Buscar e exibir os dados da especialidade
+                    if let Ok(Some(especialidade)) = especialidade_manager.read_record(medico.codigo_especialidade) {
+                        println!("Especialidade: {}", especialidade.descricao);
+                        println!("Valor da Consulta: R$ {:.2}", especialidade.valor_consulta);
+                        println!("Limite Diário de Consultas: {}", especialidade.limite_diario);
+                    } else {
+                        println!("Especialidade: Não encontrada");
+                    }
+
                 } else {
                     println!("Médico não encontrado.");
                 }
-            }
+            },
             3 => {
-                let codigo = ler_u32("Digite o código do Médico para excluir: ");
+                let codigo = ler_u32("Digite o código do médico para exclusão: ");
                 if let Ok(true) = manager.delete_record(codigo) {
-                    println!("Médico excluído com sucesso!");
+                    println!("Médico excluído (logicamente) com sucesso!");
                 } else {
-                    println!("Médico não encontrado.");
+                    println!("Médico não encontrado ou erro na exclusão.");
                 }
-            }
+            },
             4 => {
                 if let Ok(medicos) = manager.read_all_records() {
-                    for medico in medicos {
-                        println!("{:?}", medico);
+                    println!("--- Lista de Todos os Médicos ---");
+                    for m in medicos {
+                        println!("{:?}", m);
                     }
+                } else {
+                    println!("Erro ao listar médicos.");
                 }
-            }
+            },
             5 => break,
             _ => println!("Opção inválida."),
         }
     }
 }
-
 pub fn menu_especialidades(manager: &mut FileManager<Especialidade>) {
     loop {
         println!("\n--- Gerenciar Especialidades ---");
