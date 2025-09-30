@@ -8,8 +8,8 @@ pub struct Consulta {
     pub codigo_paciente: u32,
     pub codigo_medico: u32,
     pub codigo_exame: u32,
-    pub data: String, 
-    pub hora: String,
+    pub data: String, //AAAAMMDD
+    pub hora: String, //HHMM
 }
 
 impl Entity for Consulta {

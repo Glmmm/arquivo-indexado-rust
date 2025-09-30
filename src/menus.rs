@@ -4,6 +4,7 @@ use crate::structs::{
     especialidade::Especialidade, exame::Exame, medico::Medico,
     paciente::Paciente,
 };
+use crate::utils::print_data::{print_data};
 use std::io::{self, Write};
 
 
@@ -92,7 +93,7 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &File
                     println!("\n--- Dados do Paciente ---");
                     println!("Código: {}", paciente.codigo_paciente);
                     println!("Nome: {}", paciente.nome);
-                    println!("Data de Nascimento: {}", paciente.data_nascimento);
+                    print_data("Data Nascimento",&paciente.data_nascimento);
                     println!("Endereço: {}", paciente.endereco);
                     println!("Telefone: {}", paciente.telefone);
 
@@ -499,7 +500,7 @@ pub fn menu_consultas(
                     println!("Cidade do Paciente: {}", nome_cidade);
                     println!("Médico: {}", nome_medico);
                     println!("Exame: {}", desc_exame);
-                    println!("Data: {}", consulta.data);
+                    print_data("Data Consulta:",&consulta.data);
                     println!("Hora: {}", consulta.hora);
                     println!("Valor Total a Pagar: R$ {:.2}", valor_total);
                     
