@@ -331,59 +331,71 @@ pub fn menu_cidades(manager: &mut FileManager<Cidade>) {
 
 pub fn menu_exames(manager: &mut FileManager<Exame>, especialidade_manager: &FileManager<Especialidade>) {
     loop {
-        println!("\n--- Gerenciar Exames ---");
-        println!("1. Incluir Exame");
-        println!("2. Consultar Exame por código");
-        println!("3. Excluir Exame");
-        println!("4. Exibir todos os Exames");
-        println!("5. Voltar");
-        let choice = ler_opcao_menu();
+        println!("\n--- Gerenciamento de Exames ---");
+        println!("1. Inserir novo exame");
+        println!("2. Consultar exame por código");
+        println!("3. Excluir exame por código");
+        println!("4. Listar todos os exames");
+        println!("5. Voltar ao menu principal");
 
+        let choice = ler_opcao_menu();
         match choice {
             1 => {
                 let codigo = ler_u32("Código do Exame: ");
                 let descricao = ler_string("Descrição: ");
                 let codigo_especialidade = ler_u32("Código da Especialidade: ");
-                if especialidade_manager.read_record(codigo_especialidade).unwrap_or(None).is_none() {
-                    println!("Erro: Especialidade com código {} não encontrada.", codigo_especialidade);
-                    continue;
-                }
-                let valor_exame = ler_f32("Valor do Exame: ");
-                let exame = Exame {
-                    codigo_exame: codigo,
-                    descricao,
-                    codigo_especialidade,
-                    valor_exame,
-                };
-                if let Err(e) = manager.create_record(&exame, codigo) {
-                    println!("Erro ao incluir Exame: {}", e);
+                let valor = ler_f32("Valor do Exame: ");
+                
+                // Exibe a descrição da especialidade no momento da inclusão
+                if let Ok(Some(especialidade)) = especialidade_manager.read_record(codigo_especialidade) {
+                    println!("Especialidade selecionada: {}", especialidade.descricao);
                 } else {
-                    println!("Exame incluído com sucesso!");
+                    println!("Atenção: A especialidade com o código {} não foi encontrada.", codigo_especialidade);
                 }
-            }
+
+                let novo_exame = Exame { codigo_exame: codigo, descricao, codigo_especialidade, valor_exame: valor };
+                if let Err(e) = manager.create_record(&novo_exame, codigo) {
+                    eprintln!("Erro ao inserir exame: {}", e);
+                } else {
+                    println!("Exame inserido com sucesso!");
+                }
+            },
             2 => {
-                let codigo = ler_u32("Digite o código do Exame: ");
+                let codigo = ler_u32("Digite o código do exame para consulta: ");
                 if let Ok(Some(exame)) = manager.read_record(codigo) {
-                    println!("{:?}", exame);
+                    println!("\n--- Dados do Exame ---");
+                    println!("Código: {}", exame.codigo_exame);
+                    println!("Descrição: {}", exame.descricao);
+                    println!("Valor do Exame: R$ {:.2}", exame.valor_exame);
+
+                    // Requisito 4: Buscar e exibir o nome da especialidade
+                    if let Ok(Some(especialidade)) = especialidade_manager.read_record(exame.codigo_especialidade) {
+                        println!("Especialidade: {}", especialidade.descricao);
+                    } else {
+                        println!("Especialidade: Não encontrada");
+                    }
                 } else {
                     println!("Exame não encontrado.");
                 }
-            }
+            },
             3 => {
-                let codigo = ler_u32("Digite o código do Exame para excluir: ");
+                let codigo = ler_u32("Digite o código do exame para exclusão: ");
                 if let Ok(true) = manager.delete_record(codigo) {
-                    println!("Exame excluído com sucesso!");
+                    println!("Exame excluído (logicamente) com sucesso!");
                 } else {
-                    println!("Exame não encontrado.");
+                    println!("Exame não encontrado ou erro na exclusão.");
                 }
-            }
+            },
             4 => {
                 if let Ok(exames) = manager.read_all_records() {
-                    for exame in exames {
-                        println!("{:?}", exame);
+                    println!("--- Lista de Todos os Exames ---");
+                    for e in exames {
+                        println!("{:?}", e);
                     }
+                } else {
+                    println!("Erro ao listar exames.");
                 }
-            }
+            },
             5 => break,
             _ => println!("Opção inválida."),
         }
