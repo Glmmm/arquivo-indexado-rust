@@ -58,75 +58,91 @@ pub fn exibir_menu_principal() {
     println!("10. Sair");
 }
 
-pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &FileManager<Cidade>) {
+fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &FileManager<Cidade>) {
     loop {
-        println!("\n--- Gerenciar Pacientes ---");
-        println!("1. Incluir Paciente");
-        println!("2. Consultar Paciente por código");
-        println!("3. Excluir Paciente");
-        println!("4. Exibir todos os Pacientes");
-        println!("5. Voltar");
-        let choice = ler_opcao_menu();
+        println!("\n--- Gerenciamento de Pacientes ---");
+        println!("1. Inserir novo paciente");
+        println!("2. Consultar paciente por código");
+        println!("3. Excluir paciente por código");
+        println!("4. Listar todos os pacientes");
+        println!("5. Voltar ao menu principal");
 
+        let choice = ler_opcao_menu();
         match choice {
             1 => {
                 let codigo = ler_u32("Código do Paciente: ");
                 let nome = ler_string("Nome: ");
-                let data_nascimento = ler_string("Data de Nascimento (AAAAMMDD): ");
+                let data_nascimento = ler_string("Data de Nascimento: ");
                 let endereco = ler_string("Endereço: ");
                 let telefone = ler_string("Telefone: ");
                 let codigo_cidade = ler_u32("Código da Cidade: ");
-                if cidade_manager.read_record(codigo_cidade).unwrap_or(None).is_none() {
-                    println!("Erro: Cidade com código {} não encontrada.", codigo_cidade);
-                    continue;
-                }
                 let peso = ler_f32("Peso (kg): ");
                 let altura = ler_f32("Altura (m): ");
-                let paciente = Paciente {
-                    codigo_paciente: codigo,
-                    nome,
-                    data_nascimento,
-                    endereco,
-                    telefone,
-                    codigo_cidade,
-                    peso,
-                    altura,
-                };
-                if let Err(e) = manager.create_record(&paciente, codigo) {
-                    println!("Erro ao incluir Paciente: {}", e);
+
+                let novo_paciente = Paciente { codigo_paciente: codigo, nome, data_nascimento, endereco, telefone, codigo_cidade, peso, altura };
+                if let Err(e) = manager.create_record(&novo_paciente, codigo) {
+                    eprintln!("Erro ao inserir paciente: {}", e);
                 } else {
-                    println!("Paciente incluído com sucesso!");
+                    println!("Paciente inserido com sucesso!");
                 }
-            }
+            },
             2 => {
-                let codigo = ler_u32("Digite o código do Paciente: ");
+                let codigo = ler_u32("Digite o código do paciente para consulta: ");
                 if let Ok(Some(paciente)) = manager.read_record(codigo) {
-                    println!("{:?}", paciente);
+                    println!("\n--- Dados do Paciente ---");
+                    println!("Código: {}", paciente.codigo_paciente);
+                    println!("Nome: {}", paciente.nome);
+                    println!("Data de Nascimento: {}", paciente.data_nascimento);
+                    println!("Endereço: {}", paciente.endereco);
+                    println!("Telefone: {}", paciente.telefone);
+
+                    // Requisito 2: Buscar e exibir a cidade e o estado
+                    if let Ok(Some(cidade)) = cidade_manager.read_record(paciente.codigo_cidade) {
+                        println!("Cidade: {}, Estado: {}", cidade.descricao, cidade.estado);
+                    } else {
+                        println!("Cidade: Não encontrada");
+                    }
+                    
+                    // Requisito 2.1: Calcular e exibir o IMC e o diagnóstico
+                    let imc = paciente.peso / (paciente.altura * paciente.altura);
+                    let diagnostico = match imc {
+                        _ if imc < 18.5 => "Abaixo do peso",
+                        _ if imc < 25.0 => "Peso normal",
+                        _ if imc < 30.0 => "Sobrepeso",
+                        _ => "Obesidade",
+                    };
+                    println!("Peso: {:.2} kg", paciente.peso);
+                    println!("Altura: {:.2} m", paciente.altura);
+                    println!("IMC: {:.2}", imc);
+                    println!("Diagnóstico: {}", diagnostico);
+
                 } else {
                     println!("Paciente não encontrado.");
                 }
-            }
+            },
             3 => {
-                let codigo = ler_u32("Digite o código do Paciente para excluir: ");
+                let codigo = ler_u32("Digite o código do paciente para exclusão: ");
                 if let Ok(true) = manager.delete_record(codigo) {
-                    println!("Paciente excluído com sucesso!");
+                    println!("Paciente excluído (logicamente) com sucesso!");
                 } else {
-                    println!("Paciente não encontrado.");
+                    println!("Paciente não encontrado ou erro na exclusão.");
                 }
-            }
+            },
             4 => {
                 if let Ok(pacientes) = manager.read_all_records() {
-                    for paciente in pacientes {
-                        println!("{:?}", paciente);
+                    println!("--- Lista de Todos os Pacientes ---");
+                    for p in pacientes {
+                        println!("{:?}", p);
                     }
+                } else {
+                    println!("Erro ao listar pacientes.");
                 }
-            }
+            },
             5 => break,
             _ => println!("Opção inválida."),
         }
     }
 }
-
 pub fn menu_medicos(manager: &mut FileManager<Medico>, cidade_manager: &FileManager<Cidade>, especialidade_manager: &FileManager<Especialidade>) {
     loop {
         println!("\n--- Gerenciar Médicos ---");
