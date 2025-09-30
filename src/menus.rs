@@ -96,14 +96,12 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &File
                     println!("Endereço: {}", paciente.endereco);
                     println!("Telefone: {}", paciente.telefone);
 
-                    // Requisito 2: Buscar e exibir a cidade e o estado
                     if let Ok(Some(cidade)) = cidade_manager.read_record(paciente.codigo_cidade) {
                         println!("Cidade: {}, Estado: {}", cidade.descricao, cidade.estado);
                     } else {
                         println!("Cidade: Não encontrada");
                     }
                     
-                    // Requisito 2.1: Calcular e exibir o IMC e o diagnóstico
                     let imc = paciente.peso / (paciente.altura * paciente.altura);
                     let diagnostico = match imc {
                         _ if imc < 18.5 => "Abaixo do peso",
@@ -178,14 +176,12 @@ pub fn menu_medicos(manager: &mut FileManager<Medico>, cidade_manager: &FileMana
                     println!("Endereço: {}", medico.endereco);
                     println!("Telefone: {}", medico.telefone);
 
-                    // Requisito 3: Buscar e exibir a cidade e o estado
                     if let Ok(Some(cidade)) = cidade_manager.read_record(medico.codigo_cidade) {
                         println!("Cidade: {}, Estado: {}", cidade.descricao, cidade.estado);
                     } else {
                         println!("Cidade: Não encontrada");
                     }
                     
-                    // Requisito 3.1: Buscar e exibir os dados da especialidade
                     if let Ok(Some(especialidade)) = especialidade_manager.read_record(medico.codigo_especialidade) {
                         println!("Especialidade: {}", especialidade.descricao);
                         println!("Valor da Consulta: R$ {:.2}", especialidade.valor_consulta);
@@ -346,7 +342,6 @@ pub fn menu_exames(manager: &mut FileManager<Exame>, especialidade_manager: &Fil
                 let codigo_especialidade = ler_u32("Código da Especialidade: ");
                 let valor = ler_f32("Valor do Exame: ");
                 
-                // Exibe a descrição da especialidade no momento da inclusão
                 if let Ok(Some(especialidade)) = especialidade_manager.read_record(codigo_especialidade) {
                     println!("Especialidade selecionada: {}", especialidade.descricao);
                 } else {
@@ -368,7 +363,6 @@ pub fn menu_exames(manager: &mut FileManager<Exame>, especialidade_manager: &Fil
                     println!("Descrição: {}", exame.descricao);
                     println!("Valor do Exame: R$ {:.2}", exame.valor_exame);
 
-                    // Requisito 4: Buscar e exibir o nome da especialidade
                     if let Ok(Some(especialidade)) = especialidade_manager.read_record(exame.codigo_especialidade) {
                         println!("Especialidade: {}", especialidade.descricao);
                     } else {
@@ -402,107 +396,144 @@ pub fn menu_exames(manager: &mut FileManager<Exame>, especialidade_manager: &Fil
     }
 }
 
+
 pub fn menu_consultas(
     manager: &mut FileManager<Consulta>,
     paciente_manager: &FileManager<Paciente>,
     medico_manager: &FileManager<Medico>,
+    cidade_manager: &FileManager<Cidade>,
     especialidade_manager: &FileManager<Especialidade>,
     exame_manager: &FileManager<Exame>,
     diaria_manager: &mut FileManager<Diaria>,
 ) {
     loop {
-        println!("\n--- Gerenciar Consultas ---");
-        println!("1. Incluir Consulta");
-        println!("2. Consultar Consulta por código");
-        println!("3. Excluir Consulta");
-        println!("4. Exibir todas as Consultas");
-        println!("5. Voltar");
-        let choice = ler_opcao_menu();
+        println!("\n--- Gerenciamento de Consultas ---");
+        println!("1. Inserir nova consulta");
+        println!("2. Consultar consulta por código");
+        println!("3. Excluir consulta por código");
+        println!("4. Listar todas as consultas");
+        println!("5. Voltar ao menu principal");
 
+        let choice = ler_opcao_menu();
         match choice {
             1 => {
-                let codigo_consulta = ler_u32("Código da Consulta: ");
-                
+                let codigo = ler_u32("Código da Consulta: ");
                 let codigo_paciente = ler_u32("Código do Paciente: ");
-                if paciente_manager.read_record(codigo_paciente).unwrap_or(None).is_none() {
-                    println!("Erro: Paciente não encontrado.");
-                    continue;
-                }
-                
                 let codigo_medico = ler_u32("Código do Médico: ");
-                if medico_manager.read_record(codigo_medico).unwrap_or(None).is_none() {
-                    println!("Erro: Médico não encontrado.");
-                    continue;
-                }
-                
                 let codigo_exame = ler_u32("Código do Exame: ");
-                if exame_manager.read_record(codigo_exame).unwrap_or(None).is_none() {
-                    println!("Erro: Exame não encontrado.");
-                    continue;
-                }
-                
-                let data = ler_string("Data da Consulta (AAAAMMDD): ");
-                let hora = ler_string("Hora da Consulta (HHMM): ");
+                let data = ler_string("Data (AAAAMMDD): ");
 
-                let medico = medico_manager.read_record(codigo_medico).unwrap().unwrap();
-                let especialidade = especialidade_manager.read_record(medico.codigo_especialidade).unwrap().unwrap();
-                let codigo_dia = data.parse::<u32>().unwrap_or(0);
-                
-                let diaria_atual = diaria_manager.read_record(codigo_dia).unwrap_or(None).unwrap_or(Diaria {
-                    codigo_dia,
-                    codigo_especialidade: especialidade.codigo_especialidade,
-                    quantidade_consultas: 0,
-                });
-                if diaria_atual.quantidade_consultas >= especialidade.limite_diario {
-                    println!("Erro: Limite de consultas diárias para a especialidade '{}' atingido.", especialidade.descricao);
-                    continue;
-                }
-
-                let consulta = Consulta {
-                    codigo_consulta,
-                    codigo_paciente,
-                    codigo_medico,
-                    codigo_exame,
-                    data: data.clone(),
-                    hora,
-                };
-                if let Err(e) = manager.create_record(&consulta, codigo_consulta) {
-                    println!("Erro ao incluir Consulta: {}", e);
+                let medico = medico_manager.read_record(codigo_medico).unwrap_or(None);
+                let especialidade_medico = if let Some(m) = &medico {
+                    especialidade_manager.read_record(m.codigo_especialidade).unwrap_or(None)
                 } else {
-                    println!("Consulta incluída com sucesso!");
-                    atualizar_diaria(diaria_manager, codigo_dia, especialidade.codigo_especialidade, 1);
+                    None
+                };
+
+                if let Some(esp) = &especialidade_medico {
+                    let diaria = diaria_manager.read_record(data.parse().unwrap()).unwrap_or(None);
+                    let consultas_do_dia = if let Some(d) = &diaria { d.quantidade_consultas } else { 0 };
+
+                    if consultas_do_dia >= esp.limite_diario {
+                        println!("ATENÇÃO: Não há mais vagas para esta especialidade hoje. Limite diário de {} atingido.", esp.limite_diario);
+                        continue;
+                    }
+                } else {
+                    println!("Atenção: Médico ou especialidade não encontrados. Não é possível verificar o limite diário.");
                 }
-            }
+
+                let paciente = paciente_manager.read_record(codigo_paciente).unwrap_or(None);
+                let exame = exame_manager.read_record(codigo_exame).unwrap_or(None);
+
+                let valor_consulta = especialidade_medico.as_ref().map_or(0.0, |e| e.valor_consulta);
+                let valor_exame = exame.as_ref().map_or(0.0, |e| e.valor_exame);
+                let valor_total = valor_consulta + valor_exame;
+                
+                let nome_paciente = paciente.as_ref().map_or("Não encontrado".to_string(), |p| p.nome.clone());
+                let nome_medico = medico.as_ref().map_or("Não encontrado".to_string(), |m| m.nome.clone());
+                let desc_exame = exame.as_ref().map_or("Não encontrado".to_string(), |e| e.descricao.clone());
+
+                println!("\n--- Resumo da Consulta ---");
+                println!("Paciente: {}", nome_paciente);
+                println!("Médico: {}", nome_medico);
+                println!("Exame: {}", desc_exame);
+                println!("Valor Total a Pagar: R$ {:.2}", valor_total);
+                println!("--------------------------");
+
+                let nova_consulta = Consulta { codigo_consulta: codigo, codigo_paciente, codigo_medico, codigo_exame, data, hora: ler_string("Hora (HH:MM): ") };
+                if let Err(e) = manager.create_record(&nova_consulta, codigo) {
+                    eprintln!("Erro ao inserir consulta: {}", e);
+                } else {
+                    println!("Consulta inserida com sucesso!");
+                    if let Some(esp) = especialidade_medico {
+                        atualizar_diaria(diaria_manager, nova_consulta.data.parse().unwrap(), esp.codigo_especialidade, 1);
+                    }
+                }
+            },
             2 => {
-                let codigo = ler_u32("Digite o código da Consulta: ");
+                let codigo = ler_u32("Digite o código da consulta para consulta: ");
                 if let Ok(Some(consulta)) = manager.read_record(codigo) {
-                    println!("{:#?}", consulta);
+                    let paciente = paciente_manager.read_record(consulta.codigo_paciente).unwrap_or(None);
+                    let medico = medico_manager.read_record(consulta.codigo_medico).unwrap_or(None);
+                    let exame = exame_manager.read_record(consulta.codigo_exame).unwrap_or(None);
+
+                    let nome_paciente = paciente.as_ref().map_or("Não encontrado".to_string(), |p| p.nome.clone());
+                    let nome_medico = medico.as_ref().map_or("Não encontrado".to_string(), |m| m.nome.clone());
+                    let desc_exame = exame.as_ref().map_or("Não encontrado".to_string(), |e| e.descricao.clone());
+                    
+                    let nome_cidade = if let Some(p) = &paciente {
+                        cidade_manager.read_record(p.codigo_cidade).unwrap_or(None).map_or("Não encontrada".to_string(), |c| c.descricao)
+                    } else {
+                        "Não encontrada".to_string()
+                    };
+
+                    let valor_consulta = medico.as_ref()
+                        .and_then(|m| especialidade_manager.read_record(m.codigo_especialidade).unwrap_or(None))
+                        .map_or(0.0, |e| e.valor_consulta);
+                    let valor_exame = exame.as_ref().map_or(0.0, |e| e.valor_exame);
+                    let valor_total = valor_consulta + valor_exame;
+
+                    println!("\n--- Detalhes da Consulta ---");
+                    println!("Código: {}", consulta.codigo_consulta);
+                    println!("Paciente: {}", nome_paciente);
+                    println!("Cidade do Paciente: {}", nome_cidade);
+                    println!("Médico: {}", nome_medico);
+                    println!("Exame: {}", desc_exame);
+                    println!("Data: {}", consulta.data);
+                    println!("Hora: {}", consulta.hora);
+                    println!("Valor Total a Pagar: R$ {:.2}", valor_total);
+                    
                 } else {
                     println!("Consulta não encontrada.");
                 }
-            }
+            },
             3 => {
-                let codigo = ler_u32("Digite o código da Consulta para excluir: ");
+                let codigo = ler_u32("Digite o código da consulta para exclusão: ");
                 if let Ok(Some(consulta)) = manager.read_record(codigo) {
                     if let Ok(true) = manager.delete_record(codigo) {
-                        println!("Consulta excluída com sucesso!");
-                        let medico = medico_manager.read_record(consulta.codigo_medico).unwrap().unwrap();
-                        let codigo_dia = consulta.data.parse::<u32>().unwrap_or(0);
-                        atualizar_diaria(diaria_manager, codigo_dia, medico.codigo_especialidade, -1);
+                        println!("Consulta excluída (logicamente) com sucesso!");
+                        if let Some(medico) = medico_manager.read_record(consulta.codigo_medico).unwrap_or(None) {
+                            if let Some(especialidade) = especialidade_manager.read_record(medico.codigo_especialidade).unwrap_or(None) {
+                                atualizar_diaria(diaria_manager, consulta.data.parse().unwrap(), especialidade.codigo_especialidade, -1);
+                            }
+                        }
                     } else {
-                        println!("Consulta não encontrada.");
+                        println!("Consulta não encontrada ou erro na exclusão.");
                     }
                 } else {
                     println!("Consulta não encontrada.");
                 }
-            }
+            },
             4 => {
                 if let Ok(consultas) = manager.read_all_records() {
-                    for consulta in consultas {
-                        println!("{:#?}", consulta);
+                    println!("--- Lista de Todas as Consultas ---");
+                    for c in consultas {
+                        println!("{:?}", c);
                     }
+                } else {
+                    println!("Erro ao listar consultas.");
                 }
-            }
+            },
             5 => break,
             _ => println!("Opção inválida."),
         }
@@ -540,23 +571,19 @@ pub fn menu_diarias(manager: &mut FileManager<Diaria>) {
 }
 
 pub fn atualizar_diaria(diaria_manager: &mut FileManager<Diaria>, codigo_dia: u32, codigo_especialidade: u32, incremento: i32) {
-    let mut diaria = diaria_manager.read_record(codigo_dia).unwrap_or(None).unwrap_or(Diaria {
-        codigo_dia,
-        codigo_especialidade,
-        quantidade_consultas: 0,
-    });
-    
-    if incremento > 0 {
-        diaria.quantidade_consultas += 1;
-    } else if incremento < 0 && diaria.quantidade_consultas > 0 {
-        diaria.quantidade_consultas -= 1;
-    }
-
-    if let Err(e) = diaria_manager.delete_record(codigo_dia) {
-        println!("Erro ao atualizar diária (deleção): {}", e);
-    }
-    
-    if let Err(e) = diaria_manager.create_record(&diaria, codigo_dia) {
-        println!("Erro ao atualizar diária (inclusão): {}", e);
+    if let Ok(Some(mut diaria)) = diaria_manager.read_record(codigo_dia) {
+        diaria.quantidade_consultas = (diaria.quantidade_consultas as i32 + incremento) as u32;
+        if let Err(e) = diaria_manager.create_record(&diaria, codigo_dia) {
+            eprintln!("Erro ao atualizar diária: {}", e);
+        }
+    } else if incremento > 0 {
+        let nova_diaria = Diaria {
+            codigo_dia,
+            codigo_especialidade,
+            quantidade_consultas: incremento as u32,
+        };
+        if let Err(e) = diaria_manager.create_record(&nova_diaria, codigo_dia) {
+            eprintln!("Erro ao criar nova diária: {}", e);
+        }
     }
 }

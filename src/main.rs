@@ -27,6 +27,7 @@ fn main() {
                 &mut consulta_manager,
                 &paciente_manager,
                 &medico_manager,
+                &cidade_manager,
                 &especialidade_manager,
                 &exame_manager,
                 &mut diaria_manager,
