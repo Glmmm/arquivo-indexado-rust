@@ -71,6 +71,17 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &File
         match choice {
             1 => {
                 let codigo = ler_u32("Código do Paciente: ");
+                match manager.read_record(codigo) {
+                    Ok(Some(_)) => {
+                        println!("\n[ERRO]: Paciente com código {} já existe.", codigo);
+                        break;
+                    }
+                    Ok(None) => {}
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Pacientes: {}", e);
+                        break;
+                    }
+                }
                 let nome = ler_string("Nome: ");
                 let data_nascimento = ler_string("Data de Nascimento: ");
                 let endereco = ler_string("Endereço: ");
@@ -149,6 +160,7 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &File
         }
     }
 }
+
 pub fn menu_medicos(
     manager: &mut FileManager<Medico>,
     cidade_manager: &FileManager<Cidade>,
@@ -166,11 +178,55 @@ pub fn menu_medicos(
         match choice {
             1 => {
                 let codigo = ler_u32("Código do Médico: ");
+                match manager.read_record(codigo) {
+                    Ok(Some(_)) => {
+                        println!("\n[ERRO]: Medico com código {} já existe.", codigo);
+                        break;
+                    }
+                    Ok(None) => {}
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Medicos: {}", e);
+                        break;
+                    }
+                }
                 let nome = ler_string("Nome: ");
                 let endereco = ler_string("Endereço: ");
                 let telefone = ler_string("Telefone: ");
+
                 let codigo_cidade = ler_u32("Código da Cidade: ");
+                match cidade_manager.read_record(codigo_cidade) {
+                    Ok(Some(_)) => {}
+                    Ok(None) => {
+                        println!(
+                            "\n[ERRO]: Cidade com código {} não encontrada.",
+                            codigo_cidade
+                        );
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Cidades: {}", e);
+                        break;
+                    }
+                }
+
                 let codigo_especialidade = ler_u32("Código da Especialidade: ");
+                match especialidade_manager.read_record(codigo_especialidade) {
+                    Ok(Some(_)) => {}
+                    Ok(None) => {
+                        println!(
+                            "\n[ERRO]: Especialidade com código {} não encontrada.",
+                            codigo_especialidade
+                        );
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "[ERRO]: Falha ao consultar arquivo de Especialidades: {}",
+                            e
+                        );
+                        break;
+                    }
+                }
 
                 let novo_medico = Medico {
                     codigo_medico: codigo,
@@ -180,6 +236,7 @@ pub fn menu_medicos(
                     codigo_cidade,
                     codigo_especialidade,
                 };
+
                 if let Err(e) = manager.create_record(&novo_medico, codigo) {
                     eprintln!("Erro ao inserir médico: {}", e);
                 } else {
@@ -240,6 +297,7 @@ pub fn menu_medicos(
         }
     }
 }
+
 pub fn menu_especialidades(manager: &mut FileManager<Especialidade>) {
     loop {
         println!("\n--- Gerenciar Especialidades ---");
@@ -253,6 +311,21 @@ pub fn menu_especialidades(manager: &mut FileManager<Especialidade>) {
         match choice {
             1 => {
                 let codigo = ler_u32("Código da Especialidade: ");
+                match manager.read_record(codigo) {
+                    Ok(Some(_)) => {
+                        println!("\n[ERRO]: Especialidade com código {} já existe.", codigo);
+                        break;
+                    }
+                    Ok(None) => {}
+                    Err(e) => {
+                        eprintln!(
+                            "[ERRO]: Falha ao consultar arquivo de Especialidades: {}",
+                            e
+                        );
+                        break;
+                    }
+                }
+
                 let descricao = ler_string("Descrição: ");
                 let valor_consulta = ler_f32("Valor da Consulta: ");
                 let limite_diario = ler_u32("Limite Diário de Consultas: ");
@@ -310,6 +383,17 @@ pub fn menu_cidades(manager: &mut FileManager<Cidade>) {
         match choice {
             1 => {
                 let codigo = ler_u32("Código da Cidade: ");
+                match manager.read_record(codigo) {
+                    Ok(Some(_)) => {
+                        println!("\n[ERRO]: Cidade com código {} já existe.", codigo);
+                        break;
+                    }
+                    Ok(None) => {}
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Cidades: {}", e);
+                        break;
+                    }
+                }
                 let descricao = ler_string("Descrição: ");
                 let estado = ler_string("Estado: ");
                 let cidade = Cidade {
@@ -368,6 +452,17 @@ pub fn menu_exames(
         match choice {
             1 => {
                 let codigo = ler_u32("Código do Exame: ");
+                match manager.read_record(codigo) {
+                    Ok(Some(_)) => {
+                        println!("\n[ERRO]: Exame com código {} já existe.", codigo);
+                        break;
+                    }
+                    Ok(None) => {}
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Exames: {}", e);
+                        break;
+                    }
+                }
                 let descricao = ler_string("Descrição: ");
                 let codigo_especialidade = ler_u32("Código da Especialidade: ");
                 let valor = ler_f32("Valor do Exame: ");
@@ -473,17 +568,45 @@ pub fn menu_consultas(
                                 "\nERRO: Não é possível agendar consultas para uma data passada ({}).",
                                 data_str
                             );
-                            break;
+                            continue;
                         }
                         d
                     }
                     Err(_) => {
                         println!("\nERRO: Formato de data inválido. Use AAAAMMDD.");
-                        break;
+                        continue;
                     }
                 };
 
+                let paciente = paciente_manager
+                    .read_record(codigo_paciente)
+                    .unwrap_or(None);
+                if paciente.is_none() {
+                    println!(
+                        "\nERRO DE VALIDAÇÃO: Paciente com código {} não encontrado.",
+                        codigo_paciente
+                    );
+                    continue;
+                }
+
                 let medico = medico_manager.read_record(codigo_medico).unwrap_or(None);
+                if medico.is_none() {
+                    println!(
+                        "\nERRO DE VALIDAÇÃO: Médico com código {} não encontrado.",
+                        codigo_medico
+                    );
+                    continue;
+                }
+
+                let exame = exame_manager.read_record(codigo_exame).unwrap_or(None);
+                if exame.is_none() {
+                    println!(
+                        "\nERRO DE VALIDAÇÃO: Exame com código {} não encontrado.",
+                        codigo_exame
+                    );
+                    continue;
+                }
+
                 let especialidade_medico = if let Some(m) = &medico {
                     especialidade_manager
                         .read_record(m.codigo_especialidade)
@@ -510,14 +633,10 @@ pub fn menu_consultas(
                     }
                 } else {
                     println!(
-                        "Atenção: Médico ou especialidade não encontrados. Não é possível verificar o limite diário."
+                        "Atenção: Não foi possível carregar a especialidade do médico. Não é possível verificar o limite diário."
                     );
+                    continue;
                 }
-
-                let paciente = paciente_manager
-                    .read_record(codigo_paciente)
-                    .unwrap_or(None);
-                let exame = exame_manager.read_record(codigo_exame).unwrap_or(None);
 
                 let valor_consulta = especialidade_medico
                     .as_ref()
@@ -527,13 +646,19 @@ pub fn menu_consultas(
 
                 let nome_paciente = paciente
                     .as_ref()
-                    .map_or("Não encontrado".to_string(), |p| p.nome.clone());
+                    .map_or("Erro (Não deveria acontecer)".to_string(), |p| {
+                        p.nome.clone()
+                    });
                 let nome_medico = medico
                     .as_ref()
-                    .map_or("Não encontrado".to_string(), |m| m.nome.clone());
+                    .map_or("Erro (Não deveria acontecer)".to_string(), |m| {
+                        m.nome.clone()
+                    });
                 let desc_exame = exame
                     .as_ref()
-                    .map_or("Não encontrado".to_string(), |e| e.descricao.clone());
+                    .map_or("Erro (Não deveria acontecer)".to_string(), |e| {
+                        e.descricao.clone()
+                    });
 
                 println!("\n--- Resumo da Consulta ---");
                 println!("Paciente: {}", nome_paciente);
