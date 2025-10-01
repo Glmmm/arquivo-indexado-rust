@@ -9,7 +9,7 @@ pub struct Consulta {
     pub codigo_medico: u32,
     pub codigo_exame: u32,
     pub data: String, //AAAAMMDD
-    pub hora: String, //HHMM
+    pub hora: String, //HH:MM
 }
 
 impl Entity for Consulta {
@@ -23,7 +23,7 @@ impl Entity for Consulta {
         bytes.extend_from_slice(&self.codigo_paciente.to_le_bytes());
         bytes.extend_from_slice(&self.codigo_medico.to_le_bytes());
         bytes.extend_from_slice(&self.codigo_exame.to_le_bytes());
-        
+
         bytes.extend_from_slice(&(self.data.len() as u32).to_le_bytes());
         bytes.extend_from_slice(self.data.as_bytes());
 
@@ -57,7 +57,14 @@ impl Entity for Consulta {
         let codigo_exame = read_u32(&mut cursor);
         let data = read_string(&mut cursor)?;
         let hora = read_string(&mut cursor)?;
-        
-        Ok(Consulta { codigo_consulta, codigo_paciente, codigo_medico, codigo_exame, data, hora })
+
+        Ok(Consulta {
+            codigo_consulta,
+            codigo_paciente,
+            codigo_medico,
+            codigo_exame,
+            data,
+            hora,
+        })
     }
 }

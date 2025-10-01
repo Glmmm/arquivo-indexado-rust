@@ -74,19 +74,33 @@ pub fn menu_pacientes(manager: &mut FileManager<Paciente>, cidade_manager: &File
                 match manager.read_record(codigo) {
                     Ok(Some(_)) => {
                         println!("\n[ERRO]: Paciente com código {} já existe.", codigo);
-                        break;
+                        continue;
                     }
                     Ok(None) => {}
                     Err(e) => {
                         eprintln!("[ERRO]: Falha ao consultar arquivo de Pacientes: {}", e);
-                        break;
+                        continue;
                     }
                 }
                 let nome = ler_string("Nome: ");
-                let data_nascimento = ler_string("Data de Nascimento: ");
+                let data_nascimento = ler_string("Data de Nascimento (AAAAMMDD): ");
                 let endereco = ler_string("Endereço: ");
                 let telefone = ler_string("Telefone: ");
                 let codigo_cidade = ler_u32("Código da Cidade: ");
+                match cidade_manager.read_record(codigo_cidade) {
+                    Ok(Some(_)) => {}
+                    Ok(None) => {
+                        println!(
+                            "\n[ERRO]: Cidade com código {} não encontrada.",
+                            codigo_cidade
+                        );
+                        continue;
+                    }
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Cidades: {}", e);
+                        continue;
+                    }
+                }
                 let peso = ler_f32("Peso (kg): ");
                 let altura = ler_f32("Altura (m): ");
 
@@ -181,12 +195,12 @@ pub fn menu_medicos(
                 match manager.read_record(codigo) {
                     Ok(Some(_)) => {
                         println!("\n[ERRO]: Medico com código {} já existe.", codigo);
-                        break;
+                        continue;
                     }
                     Ok(None) => {}
                     Err(e) => {
                         eprintln!("[ERRO]: Falha ao consultar arquivo de Medicos: {}", e);
-                        break;
+                        continue;
                     }
                 }
                 let nome = ler_string("Nome: ");
@@ -201,11 +215,11 @@ pub fn menu_medicos(
                             "\n[ERRO]: Cidade com código {} não encontrada.",
                             codigo_cidade
                         );
-                        break;
+                        continue;
                     }
                     Err(e) => {
                         eprintln!("[ERRO]: Falha ao consultar arquivo de Cidades: {}", e);
-                        break;
+                        continue;
                     }
                 }
 
@@ -217,14 +231,14 @@ pub fn menu_medicos(
                             "\n[ERRO]: Especialidade com código {} não encontrada.",
                             codigo_especialidade
                         );
-                        break;
+                        continue;
                     }
                     Err(e) => {
                         eprintln!(
                             "[ERRO]: Falha ao consultar arquivo de Especialidades: {}",
                             e
                         );
-                        break;
+                        continue;
                     }
                 }
 
@@ -314,7 +328,7 @@ pub fn menu_especialidades(manager: &mut FileManager<Especialidade>) {
                 match manager.read_record(codigo) {
                     Ok(Some(_)) => {
                         println!("\n[ERRO]: Especialidade com código {} já existe.", codigo);
-                        break;
+                        continue;
                     }
                     Ok(None) => {}
                     Err(e) => {
@@ -322,7 +336,7 @@ pub fn menu_especialidades(manager: &mut FileManager<Especialidade>) {
                             "[ERRO]: Falha ao consultar arquivo de Especialidades: {}",
                             e
                         );
-                        break;
+                        continue;
                     }
                 }
 
@@ -386,12 +400,12 @@ pub fn menu_cidades(manager: &mut FileManager<Cidade>) {
                 match manager.read_record(codigo) {
                     Ok(Some(_)) => {
                         println!("\n[ERRO]: Cidade com código {} já existe.", codigo);
-                        break;
+                        continue;
                     }
                     Ok(None) => {}
                     Err(e) => {
                         eprintln!("[ERRO]: Falha ao consultar arquivo de Cidades: {}", e);
-                        break;
+                        continue;
                     }
                 }
                 let descricao = ler_string("Descrição: ");
@@ -455,12 +469,12 @@ pub fn menu_exames(
                 match manager.read_record(codigo) {
                     Ok(Some(_)) => {
                         println!("\n[ERRO]: Exame com código {} já existe.", codigo);
-                        break;
+                        continue;
                     }
                     Ok(None) => {}
                     Err(e) => {
                         eprintln!("[ERRO]: Falha ao consultar arquivo de Exames: {}", e);
-                        break;
+                        continue;
                     }
                 }
                 let descricao = ler_string("Descrição: ");
@@ -554,11 +568,50 @@ pub fn menu_consultas(
         match choice {
             1 => {
                 let codigo = ler_u32("Código da Consulta: ");
+                match manager.read_record(codigo) {
+                    Ok(Some(_)) => {
+                        println!("\n[ERRO]: Consulta com código {} já existe.", codigo);
+                        continue;
+                    }
+                    Ok(None) => {}
+                    Err(e) => {
+                        eprintln!("[ERRO]: Falha ao consultar arquivo de Consultas: {}", e);
+                        continue;
+                    }
+                }
                 let codigo_paciente = ler_u32("Código do Paciente: ");
-                let codigo_medico = ler_u32("Código do Médico: ");
-                let codigo_exame = ler_u32("Código do Exame: ");
-                let data_str = ler_string("Data (AAAAMMDD): ");
+                let paciente = paciente_manager
+                    .read_record(codigo_paciente)
+                    .unwrap_or(None);
+                if paciente.is_none() {
+                    println!(
+                        "\nERRO DE VALIDAÇÃO: Paciente com código {} não encontrado.",
+                        codigo_paciente
+                    );
+                    continue;
+                }
 
+                let codigo_medico = ler_u32("Código do Médico: ");
+                let medico = medico_manager.read_record(codigo_medico).unwrap_or(None);
+                if medico.is_none() {
+                    println!(
+                        "\nERRO DE VALIDAÇÃO: Médico com código {} não encontrado.",
+                        codigo_medico
+                    );
+                    continue;
+                }
+
+                let codigo_exame = ler_u32("Código do Exame: ");
+                let exame = exame_manager.read_record(codigo_exame).unwrap_or(None);
+                if exame.is_none() {
+                    println!(
+                        "\nERRO DE VALIDAÇÃO: Exame com código {} não encontrado.",
+                        codigo_exame
+                    );
+                    continue;
+                }
+
+                let data_str = ler_string("Data (AAAAMMDD): ");
                 let hoje = Local::now().date_naive();
                 let data_consulta_res = NaiveDate::parse_from_str(&data_str, "%Y%m%d");
                 let _data_consulta = match data_consulta_res {
@@ -577,35 +630,6 @@ pub fn menu_consultas(
                         continue;
                     }
                 };
-
-                let paciente = paciente_manager
-                    .read_record(codigo_paciente)
-                    .unwrap_or(None);
-                if paciente.is_none() {
-                    println!(
-                        "\nERRO DE VALIDAÇÃO: Paciente com código {} não encontrado.",
-                        codigo_paciente
-                    );
-                    continue;
-                }
-
-                let medico = medico_manager.read_record(codigo_medico).unwrap_or(None);
-                if medico.is_none() {
-                    println!(
-                        "\nERRO DE VALIDAÇÃO: Médico com código {} não encontrado.",
-                        codigo_medico
-                    );
-                    continue;
-                }
-
-                let exame = exame_manager.read_record(codigo_exame).unwrap_or(None);
-                if exame.is_none() {
-                    println!(
-                        "\nERRO DE VALIDAÇÃO: Exame com código {} não encontrado.",
-                        codigo_exame
-                    );
-                    continue;
-                }
 
                 let especialidade_medico = if let Some(m) = &medico {
                     especialidade_manager
